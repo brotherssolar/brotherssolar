@@ -1,0 +1,473 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin Login - Brothers Solar</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <style>
+        body {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+        .login-container {
+            background: white;
+            padding: 40px;
+            border-radius: 15px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+            max-width: 450px;
+            width: 100%;
+        }
+        .login-header {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+        .login-header h2 {
+            color: #333;
+            margin-bottom: 10px;
+            font-size: 24px;
+        }
+        .login-header p {
+            color: #666;
+            margin-bottom: 20px;
+        }
+        .form-group {
+            margin-bottom: 20px;
+        }
+        .form-group label {
+            display: block;
+            margin-bottom: 5px;
+            color: #333;
+            font-weight: 500;
+        }
+        .form-control {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid #ddd;
+            border-radius: 8px;
+            font-size: 16px;
+        }
+        .form-control:focus {
+            border-color: #667eea;
+            outline: none;
+            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+        }
+        .btn-primary {
+            width: 100%;
+            padding: 12px;
+            background: #667eea;
+            border: none;
+            border-radius: 8px;
+            color: white;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+        .btn-primary:hover {
+            background: #764ba2;
+            transform: translateY(-2px);
+        }
+        .btn-secondary {
+            width: 100%;
+            padding: 12px;
+            background: #6c757d;
+            border: none;
+            border-radius: 8px;
+            color: white;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            margin-top: 10px;
+        }
+        .btn-secondary:hover {
+            background: #5a6268;
+            transform: translateY(-2px);
+        }
+        .security-icon {
+            font-size: 48px;
+            color: #ffc107;
+            margin-bottom: 20px;
+        }
+        .text-danger {
+            color: #dc3545;
+            font-size: 14px;
+            margin-top: 15px;
+        }
+        .text-success {
+            color: #28a745;
+            font-size: 14px;
+            margin-top: 15px;
+        }
+        .otp-section {
+            display: none;
+        }
+        .otp-input {
+            display: flex;
+            gap: 10px;
+            justify-content: center;
+            margin-bottom: 20px;
+        }
+        .otp-input input {
+            width: 50px;
+            height: 50px;
+            text-align: center;
+            font-size: 20px;
+            font-weight: bold;
+            border: 2px solid #ddd;
+            border-radius: 8px;
+        }
+        .otp-input input:focus {
+            border-color: #667eea;
+            outline: none;
+        }
+        .countdown {
+            text-align: center;
+            color: #666;
+            margin-bottom: 15px;
+        }
+        .contact-info {
+            background: #f8f9fa;
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            font-size: 14px;
+        }
+    </style>
+</head>
+<body>
+    <div class="login-container">
+        <div class="login-header">
+            <h2><i class="fas fa-shield-alt security-icon"></i></h2>
+            <p>Admin Login</p>
+            <p>Enter your credentials to access the admin panel</p>
+        </div>
+        
+        <!-- Login Form -->
+        <div id="loginForm">
+            <form id="adminLoginForm" onsubmit="handleLogin(event)">
+                <div class="form-group">
+                    <label for="username">Username</label>
+                    <input type="text" 
+                           id="username" 
+                           class="form-control" 
+                           placeholder="Enter admin username" 
+                           required>
+                </div>
+                
+                <div class="form-group">
+                    <label for="password">Password</label>
+                    <input type="password" 
+                           id="password" 
+                           class="form-control" 
+                           placeholder="Enter admin password" 
+                           required>
+                </div>
+                
+                <button type="submit" class="btn btn-primary">
+                    <i class="fas fa-sign-in-alt me-2"></i>
+                    Login & Send Code
+                </button>
+            </form>
+        </div>
+        
+        <!-- OTP Verification Section -->
+        <div id="otpSection" class="otp-section">
+            <div class="login-header">
+                <h2><i class="fas fa-key security-icon"></i></h2>
+                <p>Enter Verification Code</p>
+            </div>
+            
+            <div class="contact-info" id="contactInfo">
+                Code sent to your email and phone
+            </div>
+            
+            <div class="countdown" id="countdown">
+                Code expires in: <span id="timer">10:00</span>
+            </div>
+            
+            <form id="otpForm" onsubmit="verifyOTP(event)">
+                <div class="otp-input">
+                    <input type="text" maxlength="1" pattern="[0-9]" required>
+                    <input type="text" maxlength="1" pattern="[0-9]" required>
+                    <input type="text" maxlength="1" pattern="[0-9]" required>
+                    <input type="text" maxlength="1" pattern="[0-9]" required>
+                    <input type="text" maxlength="1" pattern="[0-9]" required>
+                    <input type="text" maxlength="1" pattern="[0-9]" required>
+                </div>
+                
+                <button type="submit" class="btn btn-primary">
+                    <i class="fas fa-check me-2"></i>
+                    Verify Code
+                </button>
+                
+                <button type="button" class="btn btn-secondary" onclick="resendOTP()">
+                    <i class="fas fa-redo me-2"></i>
+                    Resend Code
+                </button>
+            </form>
+        </div>
+        
+        <div id="successMessage" class="text-success" style="display: none;"></div>
+        <div id="errorMessage" class="text-danger" style="display: none;"></div>
+    </div>
+    
+    <script>
+        let currentUser = '';
+        let countdownTimer;
+        let timeRemaining = 600; // 10 minutes in seconds
+        
+        function handleLogin(event) {
+            event.preventDefault();
+            
+            const username = document.getElementById('username').value.trim();
+            const password = document.getElementById('password').value.trim();
+            
+            if (!username || !password) {
+                showError('Please enter both username and password');
+                return;
+            }
+            
+            // Validate admin credentials
+            if (username === 'admin' && (password === 'admin123' || password === 'Brothers@2024' || password === 'admin@brothers')) {
+                currentUser = username;
+                
+                // Send OTP to email and phone
+                sendVerificationCode();
+                
+                // Hide login form and show OTP section
+                document.getElementById('loginForm').style.display = 'none';
+                document.getElementById('otpSection').style.display = 'block';
+                document.getElementById('successMessage').style.display = 'none';
+                document.getElementById('errorMessage').style.display = 'none';
+                
+                // Start countdown
+                startCountdown();
+                
+                // Setup OTP input fields
+                setupOTPInputs();
+                
+            } else {
+                showError('Invalid credentials. Please try again.');
+                document.getElementById('password').value = '';
+            }
+        }
+        
+        function sendVerificationCode() {
+            // Admin contact details
+            const email = 'brotherssolar01@gmail.com';
+            const phone = '7574991073';
+            
+            const requestData = {
+                action: 'request_otp',
+                email: email,
+                phone: phone
+            };
+            
+            fetch('../backend/api/admin/verify-otp.php', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify(requestData)
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    document.getElementById('contactInfo').innerHTML = 
+                        `<strong>Code sent to:</strong><br>
+                        📧 Email: ${email}<br>
+                        📱 Phone: ${phone}`;
+                    
+                    let message = 'Verification code sent successfully!';
+                    if (data.email_sent) {
+                        message += ' Check your email.';
+                    }
+                    if (data.sms_sent) {
+                        message += ' SMS also sent to your phone.';
+                    }
+                    
+                    showSuccess(message);
+                } else {
+                    showError(data.message || 'Failed to send verification code');
+                }
+            })
+            .catch(error => {
+                showError('Network error. Please try again.');
+            });
+        }
+        
+        function setupOTPInputs() {
+            const inputs = document.querySelectorAll('.otp-input input');
+            
+            inputs.forEach((input, index) => {
+                input.addEventListener('input', function(e) {
+                    if (e.target.value.length === 1) {
+                        if (index < inputs.length - 1) {
+                            inputs[index + 1].focus();
+                        }
+                    }
+                });
+                
+                input.addEventListener('keydown', function(e) {
+                    if (e.key === 'Backspace' && e.target.value === '' && index > 0) {
+                        inputs[index - 1].focus();
+                    }
+                });
+                
+                input.addEventListener('paste', function(e) {
+                    e.preventDefault();
+                    const pastedData = e.clipboardData.getData('text').slice(0, 6);
+                    const digits = pastedData.split('');
+                    
+                    digits.forEach((digit, i) => {
+                        if (inputs[i] && /^\d$/.test(digit)) {
+                            inputs[i].value = digit;
+                        }
+                    });
+                    
+                    // Focus on next empty input or last input
+                    const nextEmpty = Array.from(inputs).findIndex(input => input.value === '');
+                    if (nextEmpty !== -1) {
+                        inputs[nextEmpty].focus();
+                    } else {
+                        inputs[inputs.length - 1].focus();
+                    }
+                });
+            });
+            
+            // Focus first input
+            inputs[0].focus();
+        }
+        
+        function verifyOTP(event) {
+            event.preventDefault();
+            
+            const inputs = document.querySelectorAll('.otp-input input');
+            const otp = Array.from(inputs).map(input => input.value).join('');
+            
+            if (otp.length !== 6) {
+                showError('Please enter all 6 digits');
+                return;
+            }
+            
+            const email = 'brotherssolar01@gmail.com';
+            
+            fetch('../backend/api/admin/verify-otp.php', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    action: 'verify_otp',
+                    email: email,
+                    otp_code: otp
+                })
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    showSuccess('Verification successful! Redirecting to admin panel...');
+                    
+                    // Set session
+                    sessionStorage.setItem('adminAccess', 'true');
+                    localStorage.setItem('adminToken', data.data.token);
+                    localStorage.setItem('adminAccess', new Date().toISOString());
+                    
+                    // Stop countdown
+                    clearInterval(countdownTimer);
+                    
+                    // Redirect to admin panel
+                    setTimeout(() => {
+                        window.location.href = 'admin.html';
+                    }, 2000);
+                } else {
+                    showError(data.message || 'Invalid verification code');
+                    // Clear OTP inputs
+                    inputs.forEach(input => input.value = '');
+                    inputs[0].focus();
+                }
+            })
+            .catch(error => {
+                showError('Network error. Please try again.');
+            });
+        }
+        
+        function resendOTP() {
+            // Reset countdown
+            timeRemaining = 600;
+            startCountdown();
+            
+            // Send new code
+            sendVerificationCode();
+            
+            // Clear OTP inputs
+            const inputs = document.querySelectorAll('.otp-input input');
+            inputs.forEach(input => input.value = '');
+            inputs[0].focus();
+            
+            showSuccess('New verification code sent!');
+        }
+        
+        function startCountdown() {
+            clearInterval(countdownTimer);
+            
+            countdownTimer = setInterval(() => {
+                timeRemaining--;
+                
+                const minutes = Math.floor(timeRemaining / 60);
+                const seconds = timeRemaining % 60;
+                
+                document.getElementById('timer').textContent = 
+                    `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
+                
+                if (timeRemaining <= 0) {
+                    clearInterval(countdownTimer);
+                    document.getElementById('countdown').innerHTML = 
+                        '<span style="color: red;">Code expired. Please request a new code.</span>';
+                }
+            }, 1000);
+        }
+        
+        function showError(message) {
+            const errorElement = document.getElementById('errorMessage');
+            const successElement = document.getElementById('successMessage');
+            
+            if (errorElement) {
+                errorElement.textContent = message;
+                errorElement.style.display = 'block';
+            }
+            
+            if (successElement) {
+                successElement.style.display = 'none';
+            }
+        }
+        
+        function showSuccess(message) {
+            const successElement = document.getElementById('successMessage');
+            const errorElement = document.getElementById('errorMessage');
+            
+            if (successElement) {
+                successElement.textContent = message;
+                successElement.style.display = 'block';
+            }
+            
+            if (errorElement) {
+                errorElement.style.display = 'none';
+            }
+        }
+        
+        // Check if already has access
+        if (sessionStorage.getItem('adminAccess') === 'true') {
+            console.log('Admin already has access, redirecting...');
+            window.location.href = 'admin.html';
+        }
+    </script>
+</body>
+</html>

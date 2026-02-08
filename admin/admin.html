@@ -1,0 +1,904 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Brothers Solar - Admin Dashboard</title>
+    
+    <!-- Security Meta Tags -->
+    <meta name="robots" content="noindex, nofollow, noarchive, nosnippet, notranslate, noimageindex">
+    <meta http-equiv="X-Content-Type-Options" content="nosniff">
+    <meta http-equiv="X-XSS-Protection" content="1; mode=block">
+    <meta http-equiv="Referrer-Policy" content="no-referrer">
+    <meta name="googlebot" content="noindex, nofollow">
+    
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <link href="../style.css" rel="stylesheet">
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: #f8f9fa;
+        }
+        
+        .sidebar {
+            min-height: 100vh;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            box-shadow: 2px 0 10px rgba(0,0,0,0.1);
+            width: 250px;
+            flex-shrink: 0;
+        }
+        
+        .sidebar .nav-link {
+            color: white;
+            padding: 12px 20px;
+            margin: 5px 10px;
+            border-radius: 8px;
+            transition: all 0.3s ease;
+            text-decoration: none;
+            display: flex;
+            align-items: center;
+        }
+        
+        .sidebar .nav-link:hover {
+            background: rgba(255,255,255,0.1);
+            transform: translateX(5px);
+            color: white;
+        }
+        
+        .sidebar .nav-link.active {
+            background: rgba(255,255,255,0.2);
+            color: white;
+        }
+        
+        .sidebar .nav-link i {
+            margin-right: 10px;
+            width: 16px;
+        }
+        
+        .main-content {
+            min-height: 100vh;
+            background: #f8f9fa;
+            padding: 20px;
+            overflow-x: hidden;
+        }
+        
+        .stat-card {
+            border: none;
+            border-radius: 15px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+            transition: all 0.3s ease;
+            overflow: hidden;
+        }
+        
+        .stat-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 8px 25px rgba(0,0,0,0.15);
+        }
+        
+        .chart-container {
+            position: relative;
+            height: 350px;
+            margin: 20px 0;
+            background: white;
+            border-radius: 10px;
+            padding: 15px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        
+        .order-row:hover {
+            background: #f0f8ff;
+            transition: background 0.3s ease;
+        }
+        
+        .badge-status {
+            padding: 6px 12px;
+            border-radius: 20px;
+            font-size: 0.85rem;
+            font-weight: 500;
+        }
+        
+        .admin-header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 30px 0;
+            margin: -20px -20px 20px -20px;
+            border-radius: 15px 15px 0 0;
+        }
+        
+        .table-responsive {
+            border-radius: 10px;
+            overflow: hidden;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        
+        .table {
+            margin-bottom: 0;
+        }
+        
+        .table thead th {
+            background: #f8f9fa;
+            border-bottom: 2px solid #dee2e6;
+            font-weight: 600;
+            color: #495057;
+        }
+        
+        .table tbody tr:hover {
+            background: #f0f8ff;
+            transition: background 0.3s ease;
+        }
+        
+        .content-section {
+            display: none;
+        }
+        
+        .content-section.active {
+            display: block;
+        }
+        
+        @media (max-width: 768px) {
+            .sidebar {
+                transform: translateX(-100%);
+            }
+            
+            .sidebar.show {
+                transform: translateX(0);
+            }
+            
+            .main-content {
+                margin-left: 0;
+            }
+        }
+        
+        .btn-action {
+            padding: 6px 12px;
+            margin: 0 3px;
+            border-radius: 6px;
+            font-size: 0.85rem;
+            transition: all 0.3s ease;
+        }
+        
+        .btn-action:hover {
+            transform: scale(1.05);
+        }
+        
+        .modal-header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+        }
+        
+        .modal-content {
+            border: none;
+            border-radius: 15px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+        }
+        
+        .card {
+            border: none;
+            border-radius: 15px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+            transition: all 0.3s ease;
+        }
+        
+        .card:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 8px 25px rgba(0,0,0,0.15);
+        }
+        
+        #admin-login {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100vh;
+            z-index: 9999;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        #admin-dashboard {
+            display: none;
+            width: 100%;
+            min-height: 100vh;
+        }
+        
+        .content-section {
+            display: none;
+            animation: fadeIn 0.5s ease-in;
+        }
+        
+        .content-section.active {
+            display: block;
+        }
+        
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        
+        .table th {
+            background: #f8f9fa;
+            font-weight: 600;
+            color: #495057;
+            border: none;
+            padding: 12px 8px;
+        }
+        
+        .table td {
+            padding: 12px 8px;
+            vertical-align: middle;
+            border-bottom: 1px solid #e9ecef;
+        }
+        
+        .alert {
+            border: none;
+            border-radius: 10px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+        }
+        
+        .form-control, .form-select {
+            border-radius: 8px;
+            border: 1px solid #e0e0e0;
+            padding: 10px 15px;
+            transition: all 0.3s ease;
+        }
+        
+        .form-control:focus, .form-select:focus {
+            border-color: #667eea;
+            box-shadow: 0 0 0 0.2rem rgba(102, 126, 234, 0.25);
+        }
+        
+        .input-group-text {
+            background: #f8f9fa;
+            border: 1px solid #e0e0e0;
+            border-radius: 8px 0 0 8px;
+        }
+    </style>
+</head>
+<body>
+    <!-- Admin Login Section -->
+    <div id="admin-login" style="display: flex; align-items: center; justify-content: center; min-height: 100vh; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);">
+        <div class="container">
+            <div class="row justify-content-center">
+                <div class="col-md-6 col-lg-4">
+                    <div class="card shadow-lg border-0">
+                        <div class="card-body p-5">
+                            <div class="text-center mb-4">
+                                <i class="fas fa-shield-alt fa-3x text-primary mb-3"></i>
+                                <h3 class="mb-2">Admin Login</h3>
+                                <p class="text-muted">Brothers Solar Admin Panel</p>
+                            </div>
+                            <form id="adminLoginForm">
+                                <div class="mb-3">
+                                    <label class="form-label fw-bold">Username</label>
+                                    <div class="input-group">
+                                        <span class="input-group-text"><i class="fas fa-user"></i></span>
+                                        <input type="text" class="form-control" id="adminUsername" required placeholder="Enter admin username">
+                                    </div>
+                                </div>
+                                <div class="mb-4">
+                                    <label class="form-label fw-bold">Password</label>
+                                    <div class="input-group">
+                                        <span class="input-group-text"><i class="fas fa-lock"></i></span>
+                                        <input type="password" class="form-control" id="adminPassword" required placeholder="Enter admin password">
+                                    </div>
+                                </div>
+                                <button type="submit" class="btn btn-primary w-100 py-3 fw-bold">
+                                    <i class="fas fa-sign-in-alt me-2"></i>Login to Admin Panel
+                                </button>
+                            </form>
+
+                            <form id="adminOtpForm" style="display: none;" class="mt-4">
+                                <div class="alert alert-info mb-3" id="adminOtpHint">
+                                    <i class="fas fa-envelope me-1"></i>
+                                    OTP sent to <strong>brotherssolar01@gmail.com</strong>. Please enter it to continue.
+                                </div>
+                                <div class="mb-3">
+                                    <label class="form-label fw-bold">OTP</label>
+                                    <div class="input-group">
+                                        <span class="input-group-text"><i class="fas fa-key"></i></span>
+                                        <input type="text" class="form-control" id="adminOtp" required inputmode="numeric" autocomplete="one-time-code" placeholder="Enter 6-digit OTP" maxlength="6">
+                                    </div>
+                                    <div class="form-text">OTP expires in 5 minutes.</div>
+                                </div>
+                                <button type="submit" class="btn btn-success w-100 py-3 fw-bold">
+                                    <i class="fas fa-check me-2"></i>Verify OTP
+                                </button>
+                                <button type="button" id="resendAdminOtpBtn" class="btn btn-outline-primary w-100 py-3 fw-bold mt-2">
+                                    <i class="fas fa-rotate me-2"></i>Resend OTP
+                                </button>
+                                <button type="button" id="backToAdminLoginBtn" class="btn btn-link w-100 mt-2">
+                                    Back to login
+                                </button>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Admin Dashboard -->
+    <div id="admin-dashboard" style="display: none;">
+        <div class="d-flex">
+            <!-- Sidebar -->
+            <nav class="sidebar" id="sidebar">
+                <div class="position-sticky pt-3">
+                    <ul class="nav flex-column">
+                            <li class="nav-item">
+                                <a class="nav-link active" href="#" onclick="showSection('dashboard')">
+                                    <i class="fas fa-tachometer-alt"></i>Dashboard
+                                </a>
+                            </li>
+                            <li class="nav-item">
+                                <a class="nav-link" href="#" onclick="showSection('orders')">
+                                    <i class="fas fa-shopping-cart"></i>Orders
+                                </a>
+                            </li>
+                            <li class="nav-item">
+                                <a class="nav-link" href="#" onclick="showSection('users')">
+                                    <i class="fas fa-users"></i>Users
+                                </a>
+                            </li>
+                            <li class="nav-item">
+                                <a class="nav-link" href="#" onclick="showSection('analytics')">
+                                    <i class="fas fa-chart-line"></i>Analytics
+                                </a>
+                            </li>
+                            <li class="nav-item">
+                                <a class="nav-link" href="#" onclick="showSection('reviews')">
+                                    <i class="fas fa-star"></i>Reviews
+                                </a>
+                            </li>
+                            <li class="nav-item">
+                                <a class="nav-link" href="#" onclick="showSection('settings')">
+                                    <i class="fas fa-cog"></i>Settings
+                                </a>
+                            </li>
+                            <li class="nav-item mt-4">
+                                <a class="nav-link text-danger" href="#" onclick="logoutAdmin()">
+                                    <i class="fas fa-sign-out-alt"></i>Logout
+                                </a>
+                            </li>
+                        </ul>
+                    </div>
+                </nav>
+
+            <!-- Main content -->
+            <main class="main-content flex-fill">
+                    <!-- Dashboard Section -->
+                    <div id="dashboard-section" class="content-section active">
+                        <div class="admin-header">
+                            <div class="container-fluid">
+                                <h1 class="h3 mb-0">
+                                    <i class="fas fa-tachometer-alt me-2"></i>Admin Dashboard
+                                </h1>
+                                <p class="mb-0 opacity-75">Welcome to Brothers Solar Admin Panel</p>
+                            </div>
+                        </div>
+
+                        <!-- Statistics Cards -->
+                        <div class="row mb-4">
+                            <div class="col-xl-3 col-md-6 mb-4">
+                                <div class="card stat-card bg-primary text-white">
+                                    <div class="card-body">
+                                        <div class="d-flex justify-content-between align-items-center">
+                                            <div>
+                                                <h4 class="mb-0" id="totalOrders">0</h4>
+                                                <p class="mb-0">Total Orders</p>
+                                            </div>
+                                            <div class="align-self-center">
+                                                <i class="fas fa-shopping-cart fa-2x opacity-75"></i>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-xl-3 col-md-6 mb-4">
+                                <div class="card stat-card bg-success text-white">
+                                    <div class="card-body">
+                                        <div class="d-flex justify-content-between align-items-center">
+                                            <div>
+                                                <h4 class="mb-0" id="confirmedOrders">0</h4>
+                                                <p class="mb-0">Confirmed Orders</p>
+                                            </div>
+                                            <div class="align-self-center">
+                                                <i class="fas fa-check-circle fa-2x opacity-75"></i>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-xl-3 col-md-6 mb-4">
+                                <div class="card stat-card bg-warning text-white">
+                                    <div class="card-body">
+                                        <div class="d-flex justify-content-between align-items-center">
+                                            <div>
+                                                <h4 class="mb-0" id="pendingOrders">0</h4>
+                                                <p class="mb-0">Pending Orders</p>
+                                            </div>
+                                            <div class="align-self-center">
+                                                <i class="fas fa-clock fa-2x opacity-75"></i>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-xl-3 col-md-6 mb-4">
+                                <div class="card stat-card bg-info text-white">
+                                    <div class="card-body">
+                                        <div class="d-flex justify-content-between align-items-center">
+                                            <div>
+                                                <h4 class="mb-0" id="totalRevenue">₹0</h4>
+                                                <p class="mb-0">Total Revenue</p>
+                                            </div>
+                                            <div class="align-self-center">
+                                                <i class="fas fa-rupee-sign fa-2x opacity-75"></i>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Recent Orders -->
+                        <div class="row">
+                            <div class="col-12">
+                                <div class="card">
+                                    <div class="card-header bg-white">
+                                        <h5 class="mb-0">
+                                            <i class="fas fa-shopping-cart me-2"></i>Recent Orders
+                                        </h5>
+                                    </div>
+                                    <div class="card-body">
+                                        <div class="table-responsive">
+                                            <table class="table table-hover">
+                                                <thead class="table-light">
+                                                    <tr>
+                                                        <th>Order ID</th>
+                                                        <th>Customer</th>
+                                                        <th>Product</th>
+                                                        <th>Amount</th>
+                                                        <th>Status</th>
+                                                        <th>Date</th>
+                                                        <th>Actions</th>
+                                                    </tr>
+                                                </thead>
+                                                <tbody id="recentOrdersTable">
+                                                    <tr>
+                                                        <td colspan="6" class="text-center text-muted">
+                                                            <i class="fas fa-spinner fa-spin me-2"></i>Loading orders...
+                                                        </td>
+                                                    </tr>
+                                                </tbody>
+                                            </table>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Orders Section -->
+                    <div id="orders-section" class="content-section">
+                        <div class="d-flex justify-content-between align-items-center mb-4">
+                            <h2>
+                                <i class="fas fa-shopping-cart me-2"></i>Order Management
+                            </h2>
+                            <div>
+                                <button class="btn btn-success me-2" onclick="exportOrdersData()">
+                                    <i class="fas fa-file-excel me-2"></i>Export to Excel
+                                </button>
+                                <button class="btn btn-info me-2" onclick="downloadOrdersCSV()">
+                                    <i class="fas fa-file-csv me-2"></i>Download CSV
+                                </button>
+                                <button class="btn btn-primary" onclick="loadAllOrders()">
+                                    <i class="fas fa-sync me-2"></i>Refresh
+                                </button>
+                            </div>
+                        </div>
+
+                        <!-- Search and Filter Section -->
+                        <div class="card mb-4">
+                            <div class="card-body">
+                                <div class="row g-3">
+                                    <div class="col-md-4">
+                                        <label for="searchInput" class="form-label">
+                                            <i class="fas fa-search me-1"></i>Search Orders
+                                        </label>
+                                        <input type="text" class="form-control" id="searchInput" 
+                                               placeholder="Search by Order ID, Name, Email, Phone..." 
+                                               onkeyup="if(event.key === 'Enter') searchOrders()">
+                                    </div>
+                                    <div class="col-md-3">
+                                        <label for="dateFilter" class="form-label">
+                                            <i class="fas fa-calendar me-1"></i>Filter by Date
+                                        </label>
+                                        <input type="date" class="form-control" id="dateFilter" 
+                                               onchange="filterOrdersByDate()">
+                                    </div>
+                                    <div class="col-md-3">
+                                        <label class="form-label">&nbsp;</label>
+                                        <div class="d-flex gap-2">
+                                            <button class="btn btn-outline-primary" onclick="searchOrders()">
+                                                <i class="fas fa-search"></i> Search
+                                            </button>
+                                            <button class="btn btn-outline-secondary" onclick="clearFilters()">
+                                                <i class="fas fa-times"></i> Clear
+                                            </button>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="card">
+                            <div class="card-body">
+                                <div class="table-responsive">
+                                    <table class="table table-hover">
+                                        <thead class="table-light">
+                                            <tr>
+                                                <th>Order ID</th>
+                                                <th>Customer Name</th>
+                                                <th>Email</th>
+                                                <th>Phone</th>
+                                                <th>Solar Type</th>
+                                                <th>Quantity</th>
+                                                <th>Amount</th>
+                                                <th>Status</th>
+                                                <th>Payment</th>
+                                                <th>Date</th>
+                                                <th>Actions</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody id="allOrdersTable">
+                                            <tr>
+                                                <td colspan="10" class="text-center text-muted">
+                                                    <i class="fas fa-spinner fa-spin me-2"></i>Loading orders...
+                                                </td>
+                                            </tr>
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Users Section -->
+                    <div id="users-section" class="content-section">
+                        <div class="d-flex justify-content-between align-items-center mb-4">
+                            <h2>
+                                <i class="fas fa-users me-2"></i>User Management
+                            </h2>
+                            <button class="btn btn-primary" onclick="loadUsers()">
+                                <i class="fas fa-sync me-2"></i>Refresh
+                            </button>
+                        </div>
+                        <div class="row" id="usersContainer">
+                            <div class="col-12 text-center">
+                                <i class="fas fa-spinner fa-spin me-2"></i>Loading users...
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Analytics Section -->
+                    <div id="analytics-section" class="content-section">
+                        <div class="d-flex justify-content-between align-items-center mb-4">
+                            <h2>
+                                <i class="fas fa-chart-line me-2"></i>Analytics Dashboard
+                            </h2>
+                            <button class="btn btn-primary" onclick="updateChartsWithRealData()">
+                                <i class="fas fa-sync me-2"></i>Update Charts
+                            </button>
+                        </div>
+                        
+                        <div class="row">
+                            <div class="col-md-6 mb-4">
+                                <div class="chart-container">
+                                    <canvas id="orderChart"></canvas>
+                                </div>
+                            </div>
+                            <div class="col-md-6 mb-4">
+                                <div class="chart-container">
+                                    <canvas id="revenueChart"></canvas>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Settings Section -->
+                    <div id="settings-section" class="content-section">
+                        <div class="d-flex justify-content-between align-items-center mb-4">
+                            <h2>
+                                <i class="fas fa-cog me-2"></i>Settings
+                            </h2>
+                        </div>
+                        <div class="card">
+                            <div class="card-body">
+                                <h5 class="mb-3">Solar Panel Management</h5>
+                                <p class="text-muted mb-4">Add new solar panel types to the system</p>
+                                <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#addSolarModal">
+                                    <i class="fas fa-plus me-2"></i>Add Solar Panel
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Reviews Section -->
+                    <div id="reviews-section" class="content-section">
+                        <div class="admin-header">
+                            <div class="container-fluid">
+                                <h1 class="h3 mb-0">
+                                    <i class="fas fa-star me-2"></i>Reviews Management
+                                </h1>
+                                <p class="mb-0 opacity-75">Manage customer reviews and testimonials</p>
+                            </div>
+                        </div>
+
+                        <div class="row mb-4">
+                            <div class="col-md-12">
+                                <div class="card">
+                                    <div class="card-body">
+                                        <div class="d-flex justify-content-between align-items-center mb-3">
+                                            <h5 class="card-title mb-0">Customer Reviews</h5>
+                                            <button class="btn btn-sm btn-outline-primary" onclick="loadReviews()">
+                                                <i class="fas fa-sync-alt me-1"></i>Refresh
+                                            </button>
+                                        </div>
+                                        
+                                        <div class="table-responsive">
+                                            <table class="table table-hover" id="reviewsTable">
+                                                <thead>
+                                                    <tr>
+                                                        <th>Order ID</th>
+                                                        <th>Customer</th>
+                                                        <th>Email</th>
+                                                        <th>Rating</th>
+                                                        <th>Comment</th>
+                                                        <th>Status</th>
+                                                        <th>Date</th>
+                                                        <th>Actions</th>
+                                                    </tr>
+                                                </thead>
+                                                <tbody id="reviewsTableBody">
+                                                    <tr>
+                                                        <td colspan="8" class="text-center">Loading reviews...</td>
+                                                    </tr>
+                                                </tbody>
+                                            </table>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </main>
+        </div>
+    </div>
+
+    <!-- Edit Order Modal -->
+    <div class="modal fade" id="editOrderModal" tabindex="-1">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">
+                        <i class="fas fa-edit me-2"></i>Edit Order
+                    </h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <form id="editOrderForm">
+                        <input type="hidden" id="editOrderId">
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label fw-bold">Customer Name</label>
+                                <input type="text" class="form-control" id="editCustomerName" required>
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label fw-bold">Email</label>
+                                <input type="email" class="form-control" id="editCustomerEmail" required>
+                            </div>
+                        </div>
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label fw-bold">Phone</label>
+                                <input type="tel" class="form-control" id="editCustomerPhone" required>
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label fw-bold">Solar Type</label>
+                                <select class="form-select" id="editSolarType" required>
+                                    <option value="">Select Type</option>
+                                    <option value="Residential Solar Panel - 300W">Residential Solar Panel - 300W</option>
+                                    <option value="Commercial Solar Panel - 500W">Commercial Solar Panel - 500W</option>
+                                    <option value="Industrial Solar Panel - 1000W">Industrial Solar Panel - 1000W</option>
+                                    <option value="Solar Water Heater - 100L">Solar Water Heater - 100L</option>
+                                    <option value="Solar Water Heater - 200L">Solar Water Heater - 200L</option>
+                                    <option value="Solar Street Light - 20W">Solar Street Light - 20W</option>
+                                    <option value="Solar Street Light - 40W">Solar Street Light - 40W</option>
+                                    <option value="Solar Pump - 1HP">Solar Pump - 1HP</option>
+                                    <option value="Solar Pump - 2HP">Solar Pump - 2HP</option>
+                                    <option value="Solar Battery - 150Ah">Solar Battery - 150Ah</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div class="row">
+                            <div class="col-md-4 mb-3">
+                                <label class="form-label fw-bold">Quantity</label>
+                                <input type="number" class="form-control" id="editQuantity" min="1" required>
+                            </div>
+                            <div class="col-md-4 mb-3">
+                                <label class="form-label fw-bold">Total Amount</label>
+                                <input type="number" class="form-control" id="editTotalAmount" min="0" step="0.01" required>
+                            </div>
+                            <div class="col-md-4 mb-3">
+                                <label class="form-label fw-bold">Status</label>
+                                <select class="form-select" id="editStatus" required>
+                                    <option value="pending">Pending</option>
+                                    <option value="confirmed">Confirmed</option>
+                                    <option value="completed">Completed</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label fw-bold">Payment Status</label>
+                            <select class="form-select" id="editPaymentStatus" required>
+                                <option value="pending">Pending</option>
+                                <option value="completed">Completed</option>
+                                <option value="failed">Failed</option>
+                            </select>
+                        </div>
+                    </form>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                        <i class="fas fa-times me-2"></i>Cancel
+                    </button>
+                    <button type="button" class="btn btn-primary" onclick="updateOrder()">
+                        <i class="fas fa-save me-2"></i>Save Changes
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Add Solar Modal -->
+    <div class="modal fade" id="addSolarModal" tabindex="-1">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">
+                        <i class="fas fa-plus me-2"></i>Add Solar Panel
+                    </h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <form id="addSolarForm">
+                        <div class="mb-3">
+                            <label class="form-label fw-bold">Panel Name</label>
+                            <input type="text" class="form-control" id="panelName" required placeholder="Enter panel name">
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label fw-bold">Type</label>
+                            <select class="form-select" id="panelType" required>
+                                <option value="">Select Type</option>
+                                <option value="Residential">Residential</option>
+                                <option value="Commercial">Commercial</option>
+                                <option value="Industrial">Industrial</option>
+                            </select>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label fw-bold">Capacity (kW)</label>
+                            <input type="number" class="form-control" id="panelCapacity" min="1" step="0.1" required placeholder="Enter capacity">
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label fw-bold">Price per kW</label>
+                            <input type="number" class="form-control" id="panelPrice" min="0" step="0.01" required placeholder="Enter price">
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label fw-bold">Description</label>
+                            <textarea class="form-control" id="panelDescription" rows="3" required placeholder="Enter description"></textarea>
+                        </div>
+                    </form>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                        <i class="fas fa-times me-2"></i>Cancel
+                    </button>
+                    <button type="button" class="btn btn-primary" onclick="addSolarPanel()">
+                        <i class="fas fa-plus me-2"></i>Add Panel
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Edit Review Modal -->
+    <div class="modal fade" id="editReviewModal" tabindex="-1">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">
+                        <i class="fas fa-edit me-2"></i>Edit Review
+                    </h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <form id="editReviewForm">
+                        <input type="hidden" id="editReviewId">
+                        <input type="hidden" id="editReviewOrderId">
+                        
+                        <div class="mb-3">
+                            <label class="form-label fw-bold">Order ID</label>
+                            <input type="text" class="form-control" id="editReviewOrderIdDisplay" readonly>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label class="form-label fw-bold">Customer Name</label>
+                            <input type="text" class="form-control" id="editReviewCustomerName" required>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label class="form-label fw-bold">Email</label>
+                            <input type="email" class="form-control" id="editReviewCustomerEmail" required>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label class="form-label fw-bold">Rating</label>
+                            <div class="d-flex gap-2">
+                                <button type="button" class="btn btn-outline-warning edit-rating-btn" data-rating="1" onclick="setEditRating(1)">
+                                    <i class="fas fa-star"></i>
+                                </button>
+                                <button type="button" class="btn btn-outline-warning edit-rating-btn" data-rating="2" onclick="setEditRating(2)">
+                                    <i class="fas fa-star"></i>
+                                </button>
+                                <button type="button" class="btn btn-outline-warning edit-rating-btn" data-rating="3" onclick="setEditRating(3)">
+                                    <i class="fas fa-star"></i>
+                                </button>
+                                <button type="button" class="btn btn-outline-warning edit-rating-btn" data-rating="4" onclick="setEditRating(4)">
+                                    <i class="fas fa-star"></i>
+                                </button>
+                                <button type="button" class="btn btn-outline-warning edit-rating-btn" data-rating="5" onclick="setEditRating(5)">
+                                    <i class="fas fa-star"></i>
+                                </button>
+                            </div>
+                            <input type="hidden" id="editReviewRating" value="5" required>
+                            <small class="text-muted">Click on stars to set rating</small>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label class="form-label fw-bold">Review Comment</label>
+                            <textarea class="form-control" id="editReviewComment" rows="4" required 
+                                      placeholder="Customer review comment..."></textarea>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label class="form-label fw-bold">Status</label>
+                            <select class="form-select" id="editReviewStatus">
+                                <option value="false">Pending</option>
+                                <option value="true">Approved</option>
+                            </select>
+                        </div>
+                    </form>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                        <i class="fas fa-times me-2"></i>Cancel
+                    </button>
+                    <button type="button" class="btn btn-primary" onclick="updateReview()">
+                        <i class="fas fa-save me-2"></i>Save Changes
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Scripts -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="admin-script.js"></script>
+</body>
+</html>

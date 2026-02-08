@@ -1,0 +1,272 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin OTP Verification - Brothers Solar</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <style>
+        body {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+        .otp-container {
+            background: white;
+            padding: 40px;
+            border-radius: 15px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+            max-width: 400px;
+            width: 100%;
+        }
+        .otp-header {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+        .otp-header h2 {
+            color: #333;
+            margin-bottom: 10px;
+            font-size: 24px;
+        }
+        .otp-header p {
+            color: #666;
+            margin-bottom: 30px;
+        }
+        .form-group {
+            margin-bottom: 20px;
+        }
+        .form-control {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid #ddd;
+            border-radius: 8px;
+            font-size: 16px;
+        }
+        .btn-primary {
+            width: 100%;
+            padding: 12px;
+            background: #667eea;
+            border: none;
+            border-radius: 8px;
+            color: white;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+        .btn-primary:hover {
+            background: #764ba2;
+            transform: translateY(-2px);
+        }
+        .security-icon {
+            font-size: 48px;
+            color: #ffc107;
+            margin-bottom: 20px;
+        }
+        .text-danger {
+            color: #dc3545;
+            font-size: 14px;
+            margin-top: 15px;
+        }
+        .text-success {
+            color: #28a745;
+            font-size: 14px;
+            margin-top: 15px;
+        }
+        .otp-display {
+            background: #f8f9fa;
+            padding: 15px;
+            border-radius: 8px;
+            text-align: center;
+            font-size: 18px;
+            font-weight: bold;
+            margin-bottom: 20px;
+            letter-spacing: 3px;
+        }
+        .resend-btn {
+            background: #6c757d;
+            border: none;
+            color: white;
+            padding: 8px 16px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 14px;
+        }
+        .resend-btn:hover {
+            background: #5a6268;
+        }
+    </style>
+</head>
+<body>
+    <div class="otp-container">
+        <div class="otp-header">
+            <h2><i class="fas fa-shield-alt security-icon"></i></h2>
+            <p>Enter your email to receive OTP</p>
+            <p>We'll send a 6-digit code to your email for admin access.</p>
+        </div>
+        
+        <form id="otpForm">
+            <div class="form-group">
+                <input type="email" 
+                       id="email" 
+                       class="form-control" 
+                       placeholder="Enter your email address" 
+                       required>
+            </div>
+            
+            <button type="submit" class="btn btn-primary" onclick="requestOTP()">
+                <i class="fas fa-paper-plane me-2"></i>
+                Send OTP
+            </button>
+        </form>
+        
+        <div id="otpVerification" style="display: none;">
+            <div class="otp-header">
+                <h2><i class="fas fa-key security-icon"></i></h2>
+                <p>Enter the OTP sent to your email</p>
+                <p id="emailDisplay"></p>
+            </div>
+            
+            <form id="verificationForm">
+                <div class="form-group">
+                    <input type="text" 
+                           id="otpCode" 
+                           class="form-control" 
+                           placeholder="Enter 6-digit OTP" 
+                           maxlength="6" 
+                           required>
+                </div>
+                
+                <button type="submit" class="btn btn-primary" onclick="verifyOTP()">
+                    <i class="fas fa-check me-2"></i>
+                    Verify OTP
+                </button>
+                
+                <button type="button" class="resend-btn" onclick="requestOTP()">
+                    <i class="fas fa-redo me-2"></i>
+                    Resend OTP
+                </button>
+            </form>
+        </div>
+        
+        <div id="successMessage" class="text-success" style="display: none;"></div>
+        <div id="errorMessage" class="text-danger" style="display: none;"></div>
+    </div>
+    
+    <script>
+        let currentEmail = '';
+        
+        function requestOTP() {
+            const email = document.getElementById('email').value.trim();
+            
+            if (!email) {
+                showError('Please enter your email address');
+                return;
+            }
+            
+            fetch('/backend/api/admin/verify-otp.php', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    action: 'request_otp',
+                    email: email
+                })
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    currentEmail = email;
+                    document.getElementById('otpForm').style.display = 'none';
+                    document.getElementById('otpVerification').style.display = 'block';
+                    document.getElementById('emailDisplay').textContent = `OTP sent to: ${email}`;
+                    showSuccess('OTP sent successfully! Please check your email.');
+                } else {
+                    showError(data.message || 'Failed to send OTP');
+                }
+            })
+            .catch(error => {
+                showError('Network error. Please try again.');
+            });
+        }
+        
+        function verifyOTP() {
+            const email = currentEmail;
+            const otpCode = document.getElementById('otpCode').value.trim();
+            
+            if (!email || !otpCode) {
+                showError('Please enter both email and OTP code');
+                return;
+            }
+            
+            if (otpCode.length !== 6) {
+                showError('Please enter a valid 6-digit OTP code');
+                return;
+            }
+            
+            fetch('../backend/api/admin/verify-otp.php', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    action: 'verify_otp',
+                    email: email,
+                    otp_code: otpCode
+                })
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    showSuccess('OTP verified successfully! Redirecting to admin panel...');
+                    setTimeout(() => {
+                        window.location.href = 'admin.html';
+                    }, 2000);
+                } else {
+                    showError(data.message || 'Invalid OTP. Please try again.');
+                }
+            })
+            .catch(error => {
+                showError('Network error. Please try again.');
+            });
+        }
+        
+        function showError(message) {
+            document.getElementById('errorMessage').textContent = message;
+            document.getElementById('errorMessage').style.display = 'block';
+            document.getElementById('successMessage').style.display = 'none';
+        }
+        
+        function showSuccess(message) {
+            document.getElementById('successMessage').textContent = message;
+            document.getElementById('successMessage').style.display = 'block';
+            document.getElementById('errorMessage').style.display = 'none';
+        }
+        
+        // Check for existing session
+        fetch('../backend/api/admin/verify-otp.php', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+                action: 'check_session'
+            })
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.verified) {
+                showSuccess('Already verified! Redirecting to admin panel...');
+                setTimeout(() => {
+                    window.location.href = 'admin.html';
+                }, 2000);
+            }
+        });
+    </script>
+</body>
+</html>

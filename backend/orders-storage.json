@@ -1,0 +1,74 @@
+[
+  {
+    "solarType": "2",
+    "quantity": 1,
+    "solarTypeName": {
+      "hi": "Luminous Solar",
+      "en": "Luminous Solar",
+      "mr": "ल्युमिनस सोलर"
+    },
+    "price": 25000,
+    "totalAmount": 25000,
+    "name": "nikhil patil",
+    "email": "nikhilsunilpatil01@gmail.com",
+    "phone": "7574991073",
+    "address": "138, sai baba nagar",
+    "userId": "USR1770300090304",
+    "orderId": "ORD1770471293936",
+    "orderDate": "7/2/2026",
+    "installationDate": "Wednesday, February 18, 2026",
+    "status": "confirmed",
+    "permission": "granted",
+    "customerType": "individual",
+    "orderSource": "website",
+    "createdAt": "2026-02-07T13:34:53.941Z",
+    "userEmail": "nikhilsunilpatil01@gmail.com",
+    "paymentMethod": "Razorpay",
+    "paymentStatus": "completed",
+    "paymentCompletedAt": "2026-02-07T13:35:54.461Z",
+    "processedAt": "2026-02-07T13:35:54.461Z",
+    "isRealCustomer": true,
+    "paymentDetails": {
+      "razorpay_order_id": "order_SDH3KfHCPN1Ojx",
+      "razorpay_payment_id": "pay_SDH40R5JzTEqoL",
+      "razorpay_signature": "8dd90375441ad38b9174f14b8ff052c756d7cd55af716d9ae6c601736489132d",
+      "paymentCompletedAt": "2026-02-07T13:35:54.513Z"
+    }
+  },
+  {
+    "solarType": "1",
+    "quantity": 1,
+    "solarTypeName": {
+      "hi": "Tata Power Solar",
+      "en": "Tata Power Solar",
+      "mr": "टाटा पॉवर सोलर"
+    },
+    "price": 15000,
+    "totalAmount": 15000,
+    "name": "nikhil patil",
+    "email": "nikhilsunilpatil01@gmail.com",
+    "phone": "7574991073",
+    "address": "138,ABC",
+    "userId": "USR1770300090304",
+    "orderId": "ORD1770473723057",
+    "orderDate": "7/2/2026",
+    "installationDate": "Saturday, February 21, 2026",
+    "status": "confirmed",
+    "permission": "granted",
+    "customerType": "individual",
+    "orderSource": "website",
+    "createdAt": "2026-02-07T14:15:23.057Z",
+    "userEmail": "nikhilsunilpatil01@gmail.com",
+    "paymentMethod": "Razorpay",
+    "paymentStatus": "completed",
+    "paymentCompletedAt": "2026-02-07T14:16:06.747Z",
+    "processedAt": "2026-02-07T14:16:06.747Z",
+    "isRealCustomer": true,
+    "paymentDetails": {
+      "razorpay_order_id": "order_SDHk2dQMB73xFb",
+      "razorpay_payment_id": "pay_SDHkSrfEvCEROK",
+      "razorpay_signature": "41967da749815cd7ca08ac1d482c363da81f71a565f11bd8a0c4f014de903212",
+      "paymentCompletedAt": "2026-02-07T14:16:06.769Z"
+    }
+  }
+]

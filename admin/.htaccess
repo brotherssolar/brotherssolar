@@ -1,0 +1,40 @@
+# Admin Portal - Private Access Only
+# Restrict access to admin portal
+
+# Prevent directory listing
+Options -Indexes
+
+# Only allow access from localhost or specific IPs
+<RequireAny>
+    Require ip 127.0.0.1
+    Require ip ::1
+    # Add specific IPs if needed (uncomment and modify)
+    # Require ip 192.168.1.100
+    # Require ip 10.0.0.50
+</RequireAny>
+
+# Additional security headers
+<IfModule mod_headers.c>
+    Header always set X-Frame-Options DENY
+    Header always set X-Content-Type-Options nosniff
+    Header always set X-XSS-Protection "1; mode=block"
+    Header always set Referrer-Policy no-referrer
+    Header always set Content-Security-Policy "default-src 'self'; script-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net https://cdnjs.cloudflare.com; style-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net https://cdnjs.cloudflare.com http://localhost; font-src 'self' https://cdnjs.cloudflare.com data:; img-src 'self' data: https://cdnjs.cloudflare.com; connect-src 'self' https://cdn.jsdelivr.net https://cdnjs.cloudflare.com http://localhost:3003;"
+</IfModule>
+
+# Disable server signature
+ServerSignature Off
+
+# Protect sensitive files
+<Files "*.json">
+    Require all denied
+</Files>
+
+<Files "*.log">
+    Require all denied
+</Files>
+
+# Force HTTPS in production (uncomment for production)
+# RewriteEngine On
+# RewriteCond %{HTTPS} off
+# RewriteRule ^(.*)$ https://%{HTTP_HOST}%{REQUEST_URI} [L,R=301]
