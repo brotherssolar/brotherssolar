@@ -9,47 +9,27 @@ function hashOtp(otp) {
     return crypto.createHash('sha256').update(String(otp)).digest('hex');
 }
 
-function getRedisKey(email) {
-    return `otp:register:${email}`;
-}
+// Mock storage for testing
+const mockStorage = {};
 
 async function upstashGet(key) {
-    const base = process.env.UPSTASH_REDIS_REST_URL;
-    const token = process.env.UPSTASH_REDIS_REST_TOKEN;
-    if (!base || !token) throw new Error('Upstash env vars missing');
-
-    const url = `${base}/get/${encodeURIComponent(key)}`;
-    const resp = await fetch(url, {
-        headers: {
-            Authorization: `Bearer ${token}`
-        }
-    });
-
-    const data = await resp.json().catch(() => ({}));
-    if (!resp.ok || data.error) {
-        throw new Error(data.error || 'Upstash GET failed');
+    // For testing without Upstash - get from memory
+    const item = mockStorage[key];
+    if (!item) return null;
+    
+    // Check if expired
+    if (Date.now() > item.expires) {
+        delete mockStorage[key];
+        return null;
     }
-
-    return data.result || null;
+    
+    return item.value;
 }
 
 async function upstashDel(key) {
-    const base = process.env.UPSTASH_REDIS_REST_URL;
-    const token = process.env.UPSTASH_REDIS_REST_TOKEN;
-    if (!base || !token) throw new Error('Upstash env vars missing');
-
-    const url = `${base}/del/${encodeURIComponent(key)}`;
-    const resp = await fetch(url, {
-        method: 'POST',
-        headers: {
-            Authorization: `Bearer ${token}`
-        }
-    });
-
-    const data = await resp.json().catch(() => ({}));
-    if (!resp.ok || data.error) {
-        throw new Error(data.error || 'Upstash DEL failed');
-    }
+    // For testing without Upstash - delete from memory
+    delete mockStorage[key];
+    console.log('Mock OTP deleted:', key);
 }
 
 module.exports = async (req, res) => {
@@ -69,7 +49,7 @@ module.exports = async (req, res) => {
             return res.status(400).json({ success: false, message: 'Email and OTP are required' });
         }
 
-        const storedHash = await upstashGet(getRedisKey(normalized));
+        const storedHash = await upstashGet(`otp:register:${normalized}`);
         if (!storedHash) {
             return res.status(400).json({ success: false, message: 'OTP expired or not found' });
         }
@@ -79,11 +59,11 @@ module.exports = async (req, res) => {
             return res.status(400).json({ success: false, message: 'Invalid OTP' });
         }
 
-        await upstashDel(getRedisKey(normalized));
+        await upstashDel(`otp:register:${normalized}`);
 
         return res.status(200).json({
             success: true,
-            message: 'OTP verified successfully',
+            message: 'OTP verified successfully (MOCK MODE)',
             data: { email: normalized, verified: true }
         });
     } catch (err) {
