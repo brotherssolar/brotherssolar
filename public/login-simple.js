@@ -4,15 +4,7 @@
 document.addEventListener('DOMContentLoaded', function() {
     console.log('🚀 Simple Login System Loaded');
 
-    const API_BASE = (() => {
-        try {
-            const { hostname, origin } = window.location;
-            if (hostname.includes('vercel.app')) return `${origin}/api`;
-            return null;
-        } catch (_) {
-            return null;
-        }
-    })();
+    const API_BASE = null; // Force mock mode - no API calls
     
     // Get elements
     const loginForm = document.getElementById('loginForm');
