@@ -12,18 +12,16 @@ const API_BASE = (() => {
             return `${origin}/api`;
         }
         
-        // For Netlify deployment, use Render backend directly
-        if (hostname.includes('netlify.app')) {
-            return 'https://brothers-solar-backend.onrender.com/api';
+        // For local development, use mock system (no API calls)
+        if (isLocalHost) {
+            console.log('🔧 Local development detected - using mock OTP system');
+            return null; // Disable API calls for local
         }
         
-        // Local development
-        if (isLocalHost && port !== '3003') {
-            return `${protocol}//${hostname}:3003/api`;
-        }
         return `${origin}/api`;
     } catch (_) {
-        return 'http://localhost:3003/api';
+        console.log('🔧 Using mock OTP system - no API calls');
+        return null; // Disable API calls
     }
 })();
 
@@ -111,8 +109,8 @@ document.addEventListener('DOMContentLoaded', function() {
                 isVerified: false
             };
 
-            // For Vercel demo, use mock OTP instead of API call
-            console.log('🔧 Using mock OTP system for Vercel demo');
+            // Always use mock OTP system - no API calls needed
+            console.log('🔧 Using mock OTP system - no API calls required');
             
             // Generate mock OTP
             const mockOTP = '123456';
@@ -173,8 +171,8 @@ document.addEventListener('DOMContentLoaded', function() {
             submitBtn.disabled = true;
             submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i>Verifying...';
             
-            // For Vercel demo, verify mock OTP locally
-            console.log('🔧 Verifying mock OTP for Vercel demo');
+            // Always use mock OTP verification - no API calls needed
+            console.log('🔧 Using mock OTP verification - no API calls required');
             
             if (otp === registrationData.mockOTP) {
                 console.log('✅ Mock OTP verified successfully');
