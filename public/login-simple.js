@@ -251,6 +251,11 @@ document.addEventListener('DOMContentLoaded', function() {
         pendingLogin = null;
     };
     
+    // Show registration function
+    window.showRegistration = function() {
+        window.location.href = 'register.html';
+    };
+    
     // Check if already logged in
     function checkExistingLogin() {
         const currentUser = JSON.parse(localStorage.getItem('currentUser')) || 
