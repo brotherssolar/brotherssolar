@@ -6,7 +6,8 @@
   "scripts": {
     "start": "echo 'Static site - no build needed'",
     "build": "echo 'Build complete - static files ready'",
-    "dev": "echo 'Development mode - use local server'"
+    "dev": "echo 'Development mode - use local server'",
+    "vercel-build": "echo 'Vercel build completed'"
   },
   "keywords": [
     "solar",
@@ -17,6 +18,19 @@
   ],
   "author": "Brothers Solar Team",
   "license": "MIT",
-  "dependencies": {},
-  "devDependencies": {}
+  "dependencies": {
+    "express": "^4.18.2",
+    "cors": "^2.8.5",
+    "mysql2": "^3.6.0",
+    "bcryptjs": "^2.4.3",
+    "jsonwebtoken": "^9.0.2",
+    "nodemailer": "^6.9.4",
+    "dotenv": "^16.3.1",
+    "razorpay": "^2.9.6",
+    "crypto": "^1.0.1",
+    "@supabase/supabase-js": "^2.38.0"
+  },
+  "devDependencies": {
+    "@vercel/node": "^3.0.0"
+  }
 }
