@@ -1,5 +1,6 @@
 const crypto = require('crypto');
 const nodemailer = require('nodemailer');
+const { getUser } = require('../utils/userStorage');
 
 function normalizeEmail(email) {
     if (!email || typeof email !== 'string') return '';
@@ -71,7 +72,7 @@ async function sendOtpEmail(to, otp) {
             to,
             subject: 'Your Login OTP - Brothers Solar',
             text: `Your OTP is: ${otp}. It will expire in 10 minutes.`,
-            html: `<h2>Your Login OTP: ${otp}</h2><p>This OTP will expire in 10 minutes.</p>`
+            html: `<h2>Your Login OTP: ${otp}</h2><p>This OTP will expire in 10 minutes.</p><p>Welcome back to Brothers Solar!</p>`
         });
         
         console.log(`✅ Real Login OTP ${otp} sent to ${to}`);
@@ -100,6 +101,12 @@ module.exports = async (req, res) => {
         }
 
         console.log('Processing login OTP for:', normalized);
+
+        // Check if user exists
+        const user = await getUser(normalized);
+        if (!user) {
+            return res.status(400).json({ success: false, message: 'User not found. Please register first.' });
+        }
 
         const otp = generateOtp();
         const otpHash = hashOtp(otp);

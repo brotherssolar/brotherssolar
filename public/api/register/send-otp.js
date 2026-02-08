@@ -1,5 +1,6 @@
 const crypto = require('crypto');
 const nodemailer = require('nodemailer');
+const { userExists, addUser } = require('../utils/userStorage');
 
 function normalizeEmail(email) {
     if (!email || typeof email !== 'string') return '';
@@ -84,7 +85,7 @@ async function sendOtpEmail(to, otp) {
             to,
             subject: 'Your Registration OTP - Brothers Solar',
             text: `Your OTP is: ${otp}. It will expire in 10 minutes.`,
-            html: `<h2>Your OTP: ${otp}</h2><p>This OTP will expire in 10 minutes.</p>`
+            html: `<h2>Your OTP: ${otp}</h2><p>This OTP will expire in 10 minutes.</p><p>Thank you for registering with Brothers Solar!</p>`
         });
         
         console.log(`✅ Real OTP ${otp} sent to ${to}`);
@@ -106,7 +107,7 @@ module.exports = async (req, res) => {
     }
 
     try {
-        const { email } = req.body || {};
+        const { email, firstName, lastName, phone, password } = req.body || {};
         const normalized = normalizeEmail(email);
         if (!normalized || !normalized.includes('@')) {
             return res.status(400).json({ success: false, message: 'Valid email is required' });
@@ -114,12 +115,20 @@ module.exports = async (req, res) => {
 
         console.log('Processing registration OTP for:', normalized);
 
+        // Check if user already exists
+        if (await userExists(normalized)) {
+            return res.status(400).json({ success: false, message: 'User already exists with this email' });
+        }
+
         const otp = generateOtp();
         const otpHash = hashOtp(otp);
         const ttlSeconds = 10 * 60;
 
-        // Store in Redis
-        await upstashSet(`otp:register:${normalized}`, otpHash, ttlSeconds);
+        // Store user data temporarily (will be saved after OTP verification)
+        const userData = { email: normalized, firstName, lastName, phone, password };
+        
+        // Store in Redis with user data
+        await upstashSet(`otp:register:${normalized}`, JSON.stringify({ otpHash, userData }), ttlSeconds);
         
         // Send real email
         await sendOtpEmail(normalized, otp);
