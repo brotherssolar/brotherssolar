@@ -7,6 +7,11 @@ document.addEventListener('DOMContentLoaded', function() {
     const API_BASE = (() => {
         try {
             const { hostname, origin } = window.location;
+            // Use local backend for development
+            if (hostname === 'localhost' || hostname === '127.0.0.1') {
+                return 'http://localhost:3004/api';
+            }
+            // Fallback to Vercel for production
             if (hostname.includes('vercel.app')) return `${origin}/api`;
             return null;
         } catch (_) {
@@ -249,6 +254,11 @@ document.addEventListener('DOMContentLoaded', function() {
         if (loginFormEl) loginFormEl.style.display = 'block';
         if (otpFormEl) otpFormEl.style.display = 'none';
         pendingLogin = null;
+    };
+    
+    // Show registration function
+    window.showRegistration = function() {
+        window.location.href = 'register.html';
     };
     
     // Check if already logged in

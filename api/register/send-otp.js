@@ -1,4 +1,6 @@
 const crypto = require('crypto');
+const nodemailer = require('nodemailer');
+const { userExists, addUser } = require('../utils/userStorage');
 
 function normalizeEmail(email) {
     if (!email || typeof email !== 'string') return '';
@@ -13,36 +15,85 @@ function hashOtp(otp) {
     return crypto.createHash('sha256').update(String(otp)).digest('hex');
 }
 
-// Mock storage for testing
-const mockStorage = {};
-
+// Use real Upstash Redis
 async function upstashSet(key, value, ttlSeconds) {
-    // For testing without Upstash - store in memory
-    mockStorage[key] = { value, expires: Date.now() + (ttlSeconds * 1000) };
-    console.log('Mock OTP stored:', { key, value, ttlSeconds });
+    const base = process.env.UPSTASH_REDIS_REST_URL;
+    const token = process.env.UPSTASH_REDIS_REST_TOKEN;
+    
+    if (!base || !token) {
+        console.log('Environment variables missing:', { 
+            hasUrl: !!base, 
+            hasToken: !!token,
+            url: base ? 'SET' : 'MISSING',
+            token: token ? 'SET' : 'MISSING'
+        });
+        throw new Error('Redis environment variables missing');
+    }
+
+    const url = `${base}/set/${encodeURIComponent(key)}/${encodeURIComponent(value)}?EX=${ttlSeconds}`;
+    console.log('Storing OTP:', { url, key: key.substring(0, 20) + '...' });
+    
+    const resp = await fetch(url, {
+        method: 'POST',
+        headers: {
+            Authorization: `Bearer ${token}`
+        }
+    });
+
+    const data = await resp.json().catch(() => ({}));
+    if (!resp.ok || data.error) {
+        console.error('Upstash SET error:', data);
+        throw new Error(data.error || 'Upstash SET failed');
+    }
+    
+    console.log('OTP stored successfully');
 }
 
+// Use real Nodemailer
 function getTransporter() {
-    // For testing without SMTP - just log the OTP
-    return {
-        sendMail: async (options) => {
-            console.log('Mock email:', options);
-        }
-    };
+    const host = process.env.SMTP_HOST;
+    const port = Number(process.env.SMTP_PORT || 587);
+    const user = process.env.SMTP_USER;
+    const pass = process.env.SMTP_PASS;
+
+    console.log('SMTP Config:', { 
+        host, 
+        port, 
+        user: user ? user.substring(0, 5) + '...' : 'MISSING',
+        hasPass: !!pass 
+    });
+
+    if (!host || !user || !pass) {
+        throw new Error('SMTP environment variables missing');
+    }
+
+    return nodemailer.createTransport({
+        host,
+        port,
+        secure: port === 465,
+        auth: { user, pass }
+    });
 }
 
 async function sendOtpEmail(to, otp) {
     const transporter = getTransporter();
-    const from = process.env.SMTP_FROM || process.env.SMTP_USER || 'test@brotherssolar.com';
+    const from = process.env.SMTP_FROM || process.env.SMTP_USER;
 
-    await transporter.sendMail({
-        from,
-        to,
-        subject: 'Your Registration OTP - Brothers Solar',
-        text: `Your OTP is: ${otp}. It will expire in 10 minutes.`
-    });
-    
-    console.log(`MOCK: OTP ${otp} sent to ${to}`);
+    try {
+        await transporter.sendMail({
+            from,
+            to,
+            subject: 'Your Registration OTP - Brothers Solar',
+            text: `Your OTP is: ${otp}. It will expire in 10 minutes.`,
+            html: `<h2>Your OTP: ${otp}</h2><p>This OTP will expire in 10 minutes.</p><p>Thank you for registering with Brothers Solar!</p>`
+        });
+        
+        console.log(`✅ Real OTP ${otp} sent to ${to}`);
+        return true;
+    } catch (error) {
+        console.error('Email send error:', error);
+        throw error;
+    }
 }
 
 module.exports = async (req, res) => {
@@ -56,31 +107,45 @@ module.exports = async (req, res) => {
     }
 
     try {
-        const { email } = req.body || {};
+        const { email, firstName, lastName, phone, password } = req.body || {};
         const normalized = normalizeEmail(email);
         if (!normalized || !normalized.includes('@')) {
             return res.status(400).json({ success: false, message: 'Valid email is required' });
+        }
+
+        console.log('Processing registration OTP for:', normalized);
+
+        // Check if user already exists
+        if (await userExists(normalized)) {
+            return res.status(400).json({ success: false, message: 'User already exists with this email' });
         }
 
         const otp = generateOtp();
         const otpHash = hashOtp(otp);
         const ttlSeconds = 10 * 60;
 
-        await upstashSet(`otp:register:${normalized}`, otpHash, ttlSeconds);
+        // Store user data temporarily (will be saved after OTP verification)
+        const userData = { email: normalized, firstName, lastName, phone, password };
+        
+        // Store in Redis with user data
+        await upstashSet(`otp:register:${normalized}`, JSON.stringify({ otpHash, userData }), ttlSeconds);
+        
+        // Send real email
         await sendOtpEmail(normalized, otp);
 
         return res.status(200).json({
             success: true,
-            message: 'OTP sent successfully (MOCK MODE)',
+            message: 'OTP sent successfully to your email',
             data: { 
                 email: normalized, 
-                expiresIn: ttlSeconds,
-                mockOtp: otp, // Only for testing
-                note: 'This is mock mode - check console for OTP'
+                expiresIn: ttlSeconds
             }
         });
     } catch (err) {
         console.error('register/send-otp error:', err);
-        return res.status(500).json({ success: false, message: 'Failed to send OTP' });
+        return res.status(500).json({ 
+            success: false, 
+            message: err.message || 'Failed to send OTP' 
+        });
     }
 };

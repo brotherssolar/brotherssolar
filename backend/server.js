@@ -1703,6 +1703,254 @@ app.get('/api/health', (req, res) => {
     });
 });
 
+// OTP Storage (in production, use Redis)
+const otpStore = {};
+
+function generateOtp() {
+    return Math.floor(100000 + Math.random() * 900000).toString();
+}
+
+function hashOtp(otp) {
+    return crypto.createHash('sha256').update(otp).digest('hex');
+}
+
+// Check if user exists in database
+async function userExists(email) {
+    try {
+        if (db) {
+            const [rows] = await db.execute('SELECT id FROM users WHERE email = ?', [email.toLowerCase()]);
+            return rows.length > 0;
+        }
+        return false;
+    } catch (error) {
+        console.error('Error checking user existence:', error);
+        return false;
+    }
+}
+
+// Add new user to database
+async function addUser(userData) {
+    try {
+        if (db) {
+            const [result] = await db.execute(
+                'INSERT INTO users (email, password, firstName, lastName, phone) VALUES (?, ?, ?, ?, ?)',
+                [userData.email.toLowerCase(), userData.password, userData.firstName, userData.lastName, userData.phone]
+            );
+            return { id: result.insertId, ...userData };
+        }
+        throw new Error('Database not available');
+    } catch (error) {
+        console.error('Error adding user:', error);
+        throw error;
+    }
+}
+
+// Get user by email from database
+async function getUser(email) {
+    try {
+        if (db) {
+            const [rows] = await db.execute('SELECT * FROM users WHERE email = ?', [email.toLowerCase()]);
+            return rows[0] || null;
+        }
+        return null;
+    } catch (error) {
+        console.error('Error getting user:', error);
+        return null;
+    }
+}
+
+// Register Send OTP
+app.post('/api/register/send-otp', async (req, res) => {
+    try {
+        const { email, firstName, lastName, phone, password } = req.body;
+        
+        if (!email || !firstName || !lastName || !password) {
+            return res.status(400).json({ success: false, message: 'All fields are required' });
+        }
+
+        const normalizedEmail = email.toLowerCase().trim();
+        
+        // Check if user already exists
+        if (await userExists(normalizedEmail)) {
+            return res.status(400).json({ success: false, message: 'User already exists with this email' });
+        }
+
+        const otp = generateOtp();
+        const otpHash = hashOtp(otp);
+        
+        // Store OTP and user data
+        otpStore[normalizedEmail] = {
+            otpHash,
+            userData: { email: normalizedEmail, firstName, lastName, phone, password },
+            expires: Date.now() + 10 * 60 * 1000 // 10 minutes
+        };
+
+        // Send email using existing email service
+        try {
+            await emailService.sendOTPEmail(normalizedEmail, otp, 'register');
+        } catch (emailError) {
+            console.error('Email send failed:', emailError);
+            // Continue even if email fails
+        }
+
+        res.json({
+            success: true,
+            message: 'OTP sent successfully to your email',
+            data: { email: normalizedEmail, expiresIn: 600 }
+        });
+    } catch (error) {
+        console.error('Register send OTP error:', error);
+        res.status(500).json({ success: false, message: 'Failed to send OTP' });
+    }
+});
+
+// Register Verify OTP
+app.post('/api/register/verify-otp', async (req, res) => {
+    try {
+        const { email, otp } = req.body;
+        
+        if (!email || !otp) {
+            return res.status(400).json({ success: false, message: 'Email and OTP are required' });
+        }
+
+        const normalizedEmail = email.toLowerCase().trim();
+        const storedData = otpStore[normalizedEmail];
+
+        if (!storedData || Date.now() > storedData.expires) {
+            return res.status(400).json({ success: false, message: 'OTP expired or not found' });
+        }
+
+        const incomingHash = hashOtp(otp);
+        if (incomingHash !== storedData.otpHash) {
+            return res.status(400).json({ success: false, message: 'Invalid OTP' });
+        }
+
+        // Save user to database
+        try {
+            const savedUser = await addUser(storedData.userData);
+            delete otpStore[normalizedEmail]; // Clean up
+            
+            res.json({
+                success: true,
+                message: 'Registration successful! You can now login.',
+                data: { email: normalizedEmail, userId: savedUser.id }
+            });
+        } catch (saveError) {
+            console.error('Failed to save user:', saveError);
+            res.status(500).json({ success: false, message: 'Failed to save user data' });
+        }
+    } catch (error) {
+        console.error('Register verify OTP error:', error);
+        res.status(500).json({ success: false, message: 'Failed to verify OTP' });
+    }
+});
+
+// Login Send OTP
+app.post('/api/login/send-otp', async (req, res) => {
+    try {
+        const { email } = req.body;
+        
+        if (!email) {
+            return res.status(400).json({ success: false, message: 'Email is required' });
+        }
+
+        const normalizedEmail = email.toLowerCase().trim();
+        
+        // Check if user exists
+        const user = await getUser(normalizedEmail);
+        if (!user) {
+            return res.status(400).json({ success: false, message: 'User not found. Please register first.' });
+        }
+
+        const otp = generateOtp();
+        const otpHash = hashOtp(otp);
+        
+        // Store OTP
+        otpStore[normalizedEmail] = {
+            otpHash,
+            userId: user.id,
+            expires: Date.now() + 10 * 60 * 1000 // 10 minutes
+        };
+
+        // Send email using existing email service
+        try {
+            await emailService.sendOTPEmail(normalizedEmail, otp, 'login');
+        } catch (emailError) {
+            console.error('Email send failed:', emailError);
+            // Continue even if email fails
+        }
+
+        res.json({
+            success: true,
+            message: 'Login OTP sent successfully to your email',
+            data: { email: normalizedEmail, expiresIn: 600 }
+        });
+    } catch (error) {
+        console.error('Login send OTP error:', error);
+        res.status(500).json({ success: false, message: 'Failed to send OTP' });
+    }
+});
+
+// Login Verify OTP
+app.post('/api/login/verify-otp', async (req, res) => {
+    try {
+        const { email, otp } = req.body;
+        
+        if (!email || !otp) {
+            return res.status(400).json({ success: false, message: 'Email and OTP are required' });
+        }
+
+        const normalizedEmail = email.toLowerCase().trim();
+        const storedData = otpStore[normalizedEmail];
+
+        if (!storedData || Date.now() > storedData.expires) {
+            return res.status(400).json({ success: false, message: 'OTP expired or not found' });
+        }
+
+        const incomingHash = hashOtp(otp);
+        if (incomingHash !== storedData.otpHash) {
+            return res.status(400).json({ success: false, message: 'Invalid OTP' });
+        }
+
+        // Get user data
+        const user = await getUser(normalizedEmail);
+        delete otpStore[normalizedEmail]; // Clean up
+
+        if (!user) {
+            return res.status(400).json({ success: false, message: 'User not found' });
+        }
+
+        res.json({
+            success: true,
+            message: 'Login successful! Redirecting to dashboard...',
+            data: { 
+                email: normalizedEmail, 
+                userId: user.id,
+                firstName: user.firstName,
+                lastName: user.lastName
+            }
+        });
+    } catch (error) {
+        console.error('Login verify OTP error:', error);
+        res.status(500).json({ success: false, message: 'Failed to verify OTP' });
+    }
+});
+
+// Get all users (for admin)
+app.get('/api/users', async (req, res) => {
+    try {
+        if (db) {
+            const [rows] = await db.execute('SELECT id, email, firstName, lastName, phone, status, createdAt FROM users ORDER BY createdAt DESC');
+            res.json({ success: true, data: rows });
+        } else {
+            res.json({ success: true, data: [] });
+        }
+    } catch (error) {
+        console.error('Error getting users:', error);
+        res.status(500).json({ success: false, message: 'Failed to get users' });
+    }
+});
+
 // Error handling middleware
 app.use((err, req, res, next) => {
     console.error(err.stack);

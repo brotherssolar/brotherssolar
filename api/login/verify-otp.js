@@ -9,16 +9,18 @@ function hashOtp(otp) {
     return crypto.createHash('sha256').update(String(otp)).digest('hex');
 }
 
-function getRedisKey(email) {
-    return `otp:login:${email}`;
-}
-
+// Use real Upstash Redis
 async function upstashGet(key) {
     const base = process.env.UPSTASH_REDIS_REST_URL;
     const token = process.env.UPSTASH_REDIS_REST_TOKEN;
-    if (!base || !token) throw new Error('Upstash env vars missing');
+    
+    if (!base || !token) {
+        throw new Error('Redis environment variables missing');
+    }
 
     const url = `${base}/get/${encodeURIComponent(key)}`;
+    console.log('Getting Login OTP:', { url, key: key.substring(0, 20) + '...' });
+    
     const resp = await fetch(url, {
         headers: {
             Authorization: `Bearer ${token}`
@@ -27,6 +29,7 @@ async function upstashGet(key) {
 
     const data = await resp.json().catch(() => ({}));
     if (!resp.ok || data.error) {
+        console.error('Upstash GET error:', data);
         throw new Error(data.error || 'Upstash GET failed');
     }
 
@@ -36,9 +39,14 @@ async function upstashGet(key) {
 async function upstashDel(key) {
     const base = process.env.UPSTASH_REDIS_REST_URL;
     const token = process.env.UPSTASH_REDIS_REST_TOKEN;
-    if (!base || !token) throw new Error('Upstash env vars missing');
+    
+    if (!base || !token) {
+        throw new Error('Redis environment variables missing');
+    }
 
     const url = `${base}/del/${encodeURIComponent(key)}`;
+    console.log('Deleting Login OTP:', { url, key: key.substring(0, 20) + '...' });
+    
     const resp = await fetch(url, {
         method: 'POST',
         headers: {
@@ -48,8 +56,11 @@ async function upstashDel(key) {
 
     const data = await resp.json().catch(() => ({}));
     if (!resp.ok || data.error) {
+        console.error('Upstash DEL error:', data);
         throw new Error(data.error || 'Upstash DEL failed');
     }
+    
+    console.log('Login OTP deleted successfully');
 }
 
 module.exports = async (req, res) => {
@@ -69,7 +80,9 @@ module.exports = async (req, res) => {
             return res.status(400).json({ success: false, message: 'Email and OTP are required' });
         }
 
-        const storedHash = await upstashGet(getRedisKey(normalized));
+        console.log('Verifying Login OTP for:', normalized);
+
+        const storedHash = await upstashGet(`otp:login:${normalized}`);
         if (!storedHash) {
             return res.status(400).json({ success: false, message: 'OTP expired or not found' });
         }
@@ -79,15 +92,21 @@ module.exports = async (req, res) => {
             return res.status(400).json({ success: false, message: 'Invalid OTP' });
         }
 
-        await upstashDel(getRedisKey(normalized));
+        // Delete OTP after successful verification
+        await upstashDel(`otp:login:${normalized}`);
+
+        console.log('✅ Login verified for:', normalized);
 
         return res.status(200).json({
             success: true,
-            message: 'OTP verified successfully',
+            message: 'Login successful! Redirecting to dashboard...',
             data: { email: normalized, verified: true }
         });
     } catch (err) {
         console.error('login/verify-otp error:', err);
-        return res.status(500).json({ success: false, message: 'Failed to verify OTP' });
+        return res.status(500).json({ 
+            success: false, 
+            message: err.message || 'Failed to verify OTP' 
+        });
     }
 };
