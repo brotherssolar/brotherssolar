@@ -9,27 +9,58 @@ function hashOtp(otp) {
     return crypto.createHash('sha256').update(String(otp)).digest('hex');
 }
 
-// Mock storage for testing
-const mockStorage = {};
-
+// Use real Upstash Redis
 async function upstashGet(key) {
-    // For testing without Upstash - get from memory
-    const item = mockStorage[key];
-    if (!item) return null;
+    const base = process.env.UPSTASH_REDIS_REST_URL;
+    const token = process.env.UPSTASH_REDIS_REST_TOKEN;
     
-    // Check if expired
-    if (Date.now() > item.expires) {
-        delete mockStorage[key];
-        return null;
+    if (!base || !token) {
+        throw new Error('Redis environment variables missing');
     }
+
+    const url = `${base}/get/${encodeURIComponent(key)}`;
+    console.log('Getting Login OTP:', { url, key: key.substring(0, 20) + '...' });
     
-    return item.value;
+    const resp = await fetch(url, {
+        headers: {
+            Authorization: `Bearer ${token}`
+        }
+    });
+
+    const data = await resp.json().catch(() => ({}));
+    if (!resp.ok || data.error) {
+        console.error('Upstash GET error:', data);
+        throw new Error(data.error || 'Upstash GET failed');
+    }
+
+    return data.result || null;
 }
 
 async function upstashDel(key) {
-    // For testing without Upstash - delete from memory
-    delete mockStorage[key];
-    console.log('Mock Login OTP deleted:', key);
+    const base = process.env.UPSTASH_REDIS_REST_URL;
+    const token = process.env.UPSTASH_REDIS_REST_TOKEN;
+    
+    if (!base || !token) {
+        throw new Error('Redis environment variables missing');
+    }
+
+    const url = `${base}/del/${encodeURIComponent(key)}`;
+    console.log('Deleting Login OTP:', { url, key: key.substring(0, 20) + '...' });
+    
+    const resp = await fetch(url, {
+        method: 'POST',
+        headers: {
+            Authorization: `Bearer ${token}`
+        }
+    });
+
+    const data = await resp.json().catch(() => ({}));
+    if (!resp.ok || data.error) {
+        console.error('Upstash DEL error:', data);
+        throw new Error(data.error || 'Upstash DEL failed');
+    }
+    
+    console.log('Login OTP deleted successfully');
 }
 
 module.exports = async (req, res) => {
@@ -49,6 +80,8 @@ module.exports = async (req, res) => {
             return res.status(400).json({ success: false, message: 'Email and OTP are required' });
         }
 
+        console.log('Verifying Login OTP for:', normalized);
+
         const storedHash = await upstashGet(`otp:login:${normalized}`);
         if (!storedHash) {
             return res.status(400).json({ success: false, message: 'OTP expired or not found' });
@@ -59,15 +92,21 @@ module.exports = async (req, res) => {
             return res.status(400).json({ success: false, message: 'Invalid OTP' });
         }
 
+        // Delete OTP after successful verification
         await upstashDel(`otp:login:${normalized}`);
+
+        console.log('✅ Login verified for:', normalized);
 
         return res.status(200).json({
             success: true,
-            message: 'Login OTP verified successfully (MOCK MODE)',
+            message: 'Login successful! Redirecting to dashboard...',
             data: { email: normalized, verified: true }
         });
     } catch (err) {
         console.error('login/verify-otp error:', err);
-        return res.status(500).json({ success: false, message: 'Failed to verify OTP' });
+        return res.status(500).json({ 
+            success: false, 
+            message: err.message || 'Failed to verify OTP' 
+        });
     }
 };
