@@ -1,5 +1,4 @@
 const crypto = require('crypto');
-const nodemailer = require('nodemailer');
 
 function normalizeEmail(email) {
     if (!email || typeof email !== 'string') return '';
@@ -14,50 +13,27 @@ function hashOtp(otp) {
     return crypto.createHash('sha256').update(String(otp)).digest('hex');
 }
 
-function getRedisKey(email) {
-    return `otp:register:${email}`;
-}
+// Mock storage for testing
+const mockStorage = {};
 
 async function upstashSet(key, value, ttlSeconds) {
-    const base = process.env.UPSTASH_REDIS_REST_URL;
-    const token = process.env.UPSTASH_REDIS_REST_TOKEN;
-    if (!base || !token) throw new Error('Upstash env vars missing');
-
-    const url = `${base}/set/${encodeURIComponent(key)}/${encodeURIComponent(value)}?EX=${ttlSeconds}`;
-    const resp = await fetch(url, {
-        method: 'POST',
-        headers: {
-            Authorization: `Bearer ${token}`
-        }
-    });
-
-    const data = await resp.json().catch(() => ({}));
-    if (!resp.ok || data.error) {
-        throw new Error(data.error || 'Upstash SET failed');
-    }
+    // For testing without Upstash - store in memory
+    mockStorage[key] = { value, expires: Date.now() + (ttlSeconds * 1000) };
+    console.log('Mock OTP stored:', { key, value, ttlSeconds });
 }
 
 function getTransporter() {
-    const host = process.env.SMTP_HOST;
-    const port = Number(process.env.SMTP_PORT || 587);
-    const user = process.env.SMTP_USER;
-    const pass = process.env.SMTP_PASS;
-
-    if (!host || !user || !pass) {
-        throw new Error('SMTP env vars missing');
-    }
-
-    return nodemailer.createTransport({
-        host,
-        port,
-        secure: port === 465,
-        auth: { user, pass }
-    });
+    // For testing without SMTP - just log the OTP
+    return {
+        sendMail: async (options) => {
+            console.log('Mock email:', options);
+        }
+    };
 }
 
 async function sendOtpEmail(to, otp) {
     const transporter = getTransporter();
-    const from = process.env.SMTP_FROM || process.env.SMTP_USER;
+    const from = process.env.SMTP_FROM || process.env.SMTP_USER || 'test@brotherssolar.com';
 
     await transporter.sendMail({
         from,
@@ -65,6 +41,8 @@ async function sendOtpEmail(to, otp) {
         subject: 'Your Registration OTP - Brothers Solar',
         text: `Your OTP is: ${otp}. It will expire in 10 minutes.`
     });
+    
+    console.log(`MOCK: OTP ${otp} sent to ${to}`);
 }
 
 module.exports = async (req, res) => {
@@ -88,13 +66,18 @@ module.exports = async (req, res) => {
         const otpHash = hashOtp(otp);
         const ttlSeconds = 10 * 60;
 
-        await upstashSet(getRedisKey(normalized), otpHash, ttlSeconds);
+        await upstashSet(`otp:register:${normalized}`, otpHash, ttlSeconds);
         await sendOtpEmail(normalized, otp);
 
         return res.status(200).json({
             success: true,
-            message: 'OTP sent successfully',
-            data: { email: normalized, expiresIn: ttlSeconds }
+            message: 'OTP sent successfully (MOCK MODE)',
+            data: { 
+                email: normalized, 
+                expiresIn: ttlSeconds,
+                mockOtp: otp, // Only for testing
+                note: 'This is mock mode - check console for OTP'
+            }
         });
     } catch (err) {
         console.error('register/send-otp error:', err);
