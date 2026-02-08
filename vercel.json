@@ -11,27 +11,11 @@
   ],
   "routes": [
     {
-      "src": "/api/register/send-otp",
-      "dest": "/api/register/send-otp.js"
-    },
-    {
-      "src": "/api/register/verify-otp",
-      "dest": "/api/register/verify-otp.js"
-    },
-    {
       "src": "/(.*)",
       "dest": "/$1"
     }
   ],
   "env": {
     "NODE_ENV": "production"
-  },
-  "functions": {
-    "api/register/send-otp.js": {
-      "maxDuration": 10
-    },
-    "api/register/verify-otp.js": {
-      "maxDuration": 10
-    }
   }
 }

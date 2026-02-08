@@ -111,24 +111,32 @@ document.addEventListener('DOMContentLoaded', function() {
                 isVerified: false
             };
 
-            // Send OTP to user's email via backend
-            const otpResp = await fetch(`${API_BASE}/register/send-otp`, {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json'
-                },
-                body: JSON.stringify({ email })
-            });
-
-            const otpResult = await otpResp.json().catch(() => ({}));
-            if (!otpResp.ok || !otpResult.success) {
-                throw new Error(otpResult.message || 'Failed to send OTP');
-            }
+            // For Vercel demo, use mock OTP instead of API call
+            console.log('🔧 Using mock OTP system for Vercel demo');
+            
+            // Generate mock OTP
+            const mockOTP = '123456';
+            
+            // Show OTP to user (for demo purposes)
+            showMessage(`Demo OTP: ${mockOTP} - Please use this to verify`, 'info');
+            console.log('🔢 DEMO OTP for', email + ':', mockOTP);
+            
+            // Store mock data for verification
+            registrationData = {
+                firstName,
+                lastName,
+                email,
+                phone,
+                password, // In real app, this would be hashed
+                registrationDate: new Date().toISOString(),
+                isVerified: false,
+                mockOTP: mockOTP
+            };
             
             // Show OTP section
             showOTPSection();
             
-            showMessage(`Verification code sent to ${email}`, 'success');
+            showMessage(`Registration initiated! Use OTP: ${mockOTP}`, 'success');
             
         } catch (error) {
             console.error('Registration error:', error);
@@ -165,29 +173,27 @@ document.addEventListener('DOMContentLoaded', function() {
             submitBtn.disabled = true;
             submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i>Verifying...';
             
-            const verifyResp = await fetch(`${API_BASE}/register/verify-otp`, {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json'
-                },
-                body: JSON.stringify({ email: registrationData.email, otp })
-            });
-
-            const verifyResult = await verifyResp.json().catch(() => ({}));
-            if (!verifyResp.ok || !verifyResult.success) {
-                throw new Error(verifyResult.message || 'Invalid verification code');
+            // For Vercel demo, verify mock OTP locally
+            console.log('🔧 Verifying mock OTP for Vercel demo');
+            
+            if (otp === registrationData.mockOTP) {
+                console.log('✅ Mock OTP verified successfully');
+                
+                // Mark as verified and save user
+                registrationData.isVerified = true;
+                
+                // Save to registered users
+                const registeredUsers = JSON.parse(localStorage.getItem('registeredUsers')) || [];
+                registeredUsers.push(registrationData);
+                localStorage.setItem('registeredUsers', JSON.stringify(registeredUsers));
+                
+                // Show success section
+                showSuccessSection();
+                
+                showMessage('Registration completed successfully!', 'success');
+            } else {
+                throw new Error(`Invalid OTP. Use: ${registrationData.mockOTP}`);
             }
-            
-            // Mark as verified and save user
-            registrationData.isVerified = true;
-            
-            // Save to registered users
-            const registeredUsers = JSON.parse(localStorage.getItem('registeredUsers')) || [];
-            registeredUsers.push(registrationData);
-            localStorage.setItem('registeredUsers', JSON.stringify(registeredUsers));
-            
-            // Show success section
-            showSuccessSection();
             
             showMessage('Account verified successfully!', 'success');
             
