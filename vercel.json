@@ -7,14 +7,6 @@
       "config": {
         "distDir": "."
       }
-    },
-    {
-      "src": "backend/server.js",
-      "use": "@vercel/node"
-    },
-    {
-      "src": "api/**/*.js",
-      "use": "@vercel/node"
     }
   ],
   "routes": [
@@ -23,8 +15,8 @@
       "dest": "/api/register/send-otp.js"
     },
     {
-      "src": "/api/(.*)",
-      "dest": "/backend/server.js"
+      "src": "/api/register/verify-otp",
+      "dest": "/api/register/verify-otp.js"
     },
     {
       "src": "/(.*)",
@@ -35,11 +27,11 @@
     "NODE_ENV": "production"
   },
   "functions": {
-    "backend/server.js": {
-      "maxDuration": 30
-    },
     "api/register/send-otp.js": {
-      "maxDuration": 30
+      "maxDuration": 10
+    },
+    "api/register/verify-otp.js": {
+      "maxDuration": 10
     }
   }
 }
