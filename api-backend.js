@@ -1,6 +1,4 @@
-// Backend API Configuration Only
-// This file contains only backend configuration and client setup
-
+// Backend API Configuration
 const API_BASE_URL = (() => {
     try {
         const { protocol, hostname, port, origin } = window.location;

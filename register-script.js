@@ -6,6 +6,13 @@ const API_BASE = (() => {
     try {
         const { protocol, hostname, port, origin } = window.location;
         const isLocalHost = hostname === 'localhost' || hostname === '127.0.0.1';
+        
+        // For Netlify deployment, use relative API path
+        if (hostname.includes('netlify.app') || hostname.includes('github.io')) {
+            return `${origin}/.netlify/functions/api`;
+        }
+        
+        // Local development
         if (isLocalHost && port !== '3003') {
             return `${protocol}//${hostname}:3003/api`;
         }
