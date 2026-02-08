@@ -1,0 +1,22 @@
+{
+  "name": "brothers-solar",
+  "version": "1.0.0",
+  "description": "Brothers Solar - Complete Solar Energy Solutions",
+  "main": "index.html",
+  "scripts": {
+    "start": "echo 'Static site - no build needed'",
+    "build": "echo 'Build complete - static files ready'",
+    "dev": "echo 'Development mode - use local server'"
+  },
+  "keywords": [
+    "solar",
+    "energy",
+    "brothers-solar",
+    "solar-panels",
+    "renewable-energy"
+  ],
+  "author": "Brothers Solar Team",
+  "license": "MIT",
+  "dependencies": {},
+  "devDependencies": {}
+}

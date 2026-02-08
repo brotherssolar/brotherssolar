@@ -7,9 +7,14 @@ const API_BASE = (() => {
         const { protocol, hostname, port, origin } = window.location;
         const isLocalHost = hostname === 'localhost' || hostname === '127.0.0.1';
         
-        // For Netlify deployment, use relative API path
-        if (hostname.includes('netlify.app') || hostname.includes('github.io')) {
-            return `${origin}/.netlify/functions/api`;
+        // For Vercel deployment, use same origin
+        if (hostname.includes('vercel.app')) {
+            return `${origin}/api`;
+        }
+        
+        // For Netlify deployment, use Render backend directly
+        if (hostname.includes('netlify.app')) {
+            return 'https://brothers-solar-backend.onrender.com/api';
         }
         
         // Local development

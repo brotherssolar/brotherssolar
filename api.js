@@ -5,7 +5,12 @@ const API_BASE_URL = (() => {
     try {
         const { protocol, hostname, port, origin } = window.location;
 
-        // Production deployment
+        // Vercel deployment
+        if (hostname.includes('vercel.app')) {
+            return `${origin}/api`;
+        }
+        
+        // Netlify deployment (fallback)
         if (hostname.includes('netlify.app')) {
             return 'https://brothers-solar-backend.onrender.com/api';
         }
